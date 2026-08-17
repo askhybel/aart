@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Faglig organisation 2026</title>
+<style>
+  :root{
+    --cream:#FFFFFF;
+    --paper:#FFFFFF;
+    --ink:#101010;
+    --ink-soft:#6E6E6E;
+    --accent:#101010;
+    --accent-strong:#000000;
+    --tint:#EDEDED;
+    --tint-soft:#F6F6F6;
+    --line:#101010;
+    --off:#B5502E;
+    --off-tint:#F4E3DB;
+    --priv:#3D5A66;
+    --priv-tint:#DCE6E9;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--cream);
+    color:var(--ink);
+    font-family:"Helvetica Neue",Helvetica,Arial,-apple-system,BlinkMacSystemFont,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{
+    max-width:1180px;
+    margin:0 auto;
+    padding:48px 20px 90px;
+  }
+  header.top{
+    margin-bottom:46px;
+    padding-bottom:34px;
+    border-bottom:1px solid var(--line);
+  }
+  .eyebrow{
+    font-size:11px;
+    letter-spacing:.22em;
+    text-transform:uppercase;
+    color:var(--ink);
+    font-weight:600;
+    margin:0 0 22px;
+  }
+  h1{
+    font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;
+    font-size:clamp(32px,5.2vw,58px);
+    line-height:0.98;
+    letter-spacing:-.01em;
+    margin:0 0 20px;
+    color:var(--ink);
+    font-weight:700;
+    text-transform:uppercase;
+  }
+  h1 em{
+    font-style:normal;
+    color:var(--ink-soft);
+  }
+  .lede{
+    font-size:16px;
+    line-height:1.6;
+    color:var(--ink-soft);
+    max-width:560px;
+    margin:0;
+  }
+  .legend{
+    display:flex;
+    flex-wrap:wrap;
+    gap:26px;
+    margin-top:26px;
+    font-size:11px;
+    letter-spacing:.06em;
+    text-transform:uppercase;
+    color:var(--ink-soft);
+  }
+  .legend span{display:inline-flex;align-items:center;gap:8px;}
+  .dot{width:10px;height:10px;border-radius:2px;display:inline-block;flex:none;}
+  .dot.off{background:var(--off);}
+  .dot.priv{background:var(--priv);}
+
+  /* ---- matrix ---- */
+  .matrix-scroll{
+    overflow-x:auto;
+    padding-bottom:6px;
+    margin:0 -20px;
+    padding-left:20px;
+    padding-right:20px;
+  }
+  .matrix{
+    border-collapse:separate;
+    border-spacing:0;
+    min-width:920px;
+    width:100%;
+  }
+  .matrix th, .matrix td{
+    text-align:left;
+    vertical-align:middle;
+  }
+  .corner{
+    width:230px;
+    min-width:230px;
+  }
+  .col-head{
+    padding:0 6px 18px;
+    vertical-align:bottom;
+  }
+  .col-head-inner{
+    font-size:11px;
+    font-weight:600;
+    letter-spacing:.04em;
+    color:var(--ink);
+    line-height:1.3;
+    padding-bottom:12px;
+    border-bottom:1px solid var(--ink);
+    text-transform:uppercase;
+    display:flex;
+    align-items:baseline;
+    gap:6px;
+  }
+  .col-num{
+    color:var(--ink-soft);
+    font-weight:400;
+    font-size:10.5px;
+  }
+  .col-head-sub{
+    font-weight:400;
+    color:var(--ink-soft);
+    font-size:12px;
+    display:block;
+    margin-top:2px;
+  }
+  .group-row td{
+    padding-top:26px;
+    padding-bottom:8px;
+  }
+  .group-label{
+    font-size:10.5px;
+    letter-spacing:.16em;
+    text-transform:uppercase;
+    font-weight:600;
+    padding:0;
+    border-radius:0;
+    display:inline-block;
+    padding-bottom:3px;
+  }
+  .group-off .group-label{color:var(--off); border-bottom:2px solid var(--off);}
+  .group-priv .group-label{color:var(--priv); border-bottom:2px solid var(--priv);}
+
+  .row-head{
+    padding:10px 14px 10px 12px;
+    border-bottom:1px solid var(--tint);
+    border-left:3px solid transparent;
+  }
+  tr.row-off .row-head{border-left-color:var(--off);}
+  tr.row-priv .row-head{border-left-color:var(--priv);}
+  .row-name{
+    font-size:14px;
+    font-weight:600;
+    color:var(--ink);
+    line-height:1.3;
+  }
+  .row-people{
+    font-size:11.5px;
+    color:var(--ink-soft);
+    margin-top:3px;
+    line-height:1.4;
+  }
+  .cell{
+    padding:5px;
+    border-bottom:1px solid var(--tint);
+  }
+  .cell-btn{
+    width:100%;
+    height:56px;
+    border:1px solid var(--tint);
+    border-radius:0;
+    background:var(--paper);
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:4px;
+    transition:background .15s ease, border-color .15s ease;
+    position:relative;
+  }
+  tr.row-off .cell-btn:hover{
+    background:var(--off-tint);
+    border-color:var(--off);
+  }
+  tr.row-priv .cell-btn:hover{
+    background:var(--priv-tint);
+    border-color:var(--priv);
+  }
+  .cell-btn:active{
+    background:var(--tint);
+  }
+  tr.row-off .cell-btn.is-open{
+    background:var(--off);
+    border-color:var(--off);
+  }
+  tr.row-priv .cell-btn.is-open{
+    background:var(--priv);
+    border-color:var(--priv);
+  }
+  .initials{
+    width:24px;
+    height:24px;
+    border-radius:50%;
+    background:var(--paper);
+    color:var(--ink);
+    font-size:10px;
+    font-weight:600;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    border:1px solid var(--ink);
+    margin:0 -3px;
+  }
+  .cell-btn.is-open .initials{
+    background:#FFFFFF;
+    color:var(--ink);
+    border-color:#FFFFFF;
+  }
+
+  /* ---- detail panel ---- */
+  .panel-holder{
+    position:sticky;
+    bottom:16px;
+    margin-top:24px;
+    z-index:5;
+  }
+  .panel{
+    background:#000000;
+    color:#FFFFFF;
+    border-radius:0;
+    border-top:4px solid var(--ink);
+    padding:26px 28px;
+    box-shadow:0 16px 40px rgba(0,0,0,.35);
+    display:none;
+    animation:rise .18s ease;
+  }
+  .panel.group-off{border-top-color:var(--off);}
+  .panel.group-priv{border-top-color:var(--priv);}
+  .panel.show{display:block;}
+  @keyframes rise{
+    from{opacity:0; transform:translateY(8px);}
+    to{opacity:1; transform:translateY(0);}
+  }
+  .panel-top{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    gap:16px;
+    margin-bottom:16px;
+  }
+  .panel-title{
+    font-size:10.5px;
+    text-transform:uppercase;
+    letter-spacing:.18em;
+    color:#9A9A9A;
+    font-weight:600;
+    margin:0 0 8px;
+  }
+  .panel-heading{
+    font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;
+    font-size:22px;
+    margin:0;
+    line-height:1.25;
+    font-weight:700;
+    text-transform:uppercase;
+    letter-spacing:-.005em;
+  }
+  .panel-heading .x{
+    color:#9A9A9A;
+    font-weight:400;
+    padding:0 8px;
+    text-transform:none;
+  }
+  .panel-close{
+    background:transparent;
+    border:1px solid #FFFFFF;
+    color:#FFFFFF;
+    width:32px;
+    height:32px;
+    border-radius:0;
+    font-size:14px;
+    cursor:pointer;
+    flex:none;
+  }
+  .panel-close:hover{background:#FFFFFF; color:#000000;}
+  .panel-cols{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:20px;
+  }
+  .panel-block h4{
+    font-size:10.5px;
+    text-transform:uppercase;
+    letter-spacing:.1em;
+    color:#9A9A9A;
+    margin:0 0 12px;
+    font-weight:600;
+  }
+  .panel-block ul{
+    list-style:none;
+    margin:0;
+    padding:0;
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+  }
+  .panel-block li{
+    font-size:14.5px;
+    line-height:1.4;
+    display:flex;
+    gap:8px;
+  }
+  .badge{
+    font-size:9.5px;
+    font-weight:600;
+    color:#FFFFFF;
+    background:transparent;
+    border:1px solid #FFFFFF;
+    border-radius:0;
+    padding:1px 6px;
+    flex:none;
+    height:fit-content;
+    margin-top:2px;
+    letter-spacing:.03em;
+  }
+  .panel-note{
+    margin-top:18px;
+    padding-top:16px;
+    border-top:1px solid rgba(255,255,255,.2);
+    font-size:13px;
+    color:#B8B8B8;
+  }
+
+  .cases-section{
+    margin-top:20px;
+    padding-top:18px;
+    border-top:1px solid rgba(255,255,255,.2);
+  }
+  .cases-section h4{
+    font-size:10.5px;
+    text-transform:uppercase;
+    letter-spacing:.1em;
+    color:#9A9A9A;
+    margin:0 0 14px;
+    font-weight:600;
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .cases-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:12px;
+  }
+  .case-card{
+    background:transparent;
+    border:1px dashed rgba(255,255,255,.35);
+    border-radius:0;
+    padding:14px 16px;
+  }
+  .case-card-top{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    gap:8px;
+    margin-bottom:6px;
+  }
+  .case-name{
+    font-size:13.5px;
+    font-weight:600;
+    color:#FFFFFF;
+    line-height:1.3;
+  }
+  .case-example-tag{
+    font-size:9px;
+    text-transform:uppercase;
+    letter-spacing:.08em;
+    font-weight:600;
+    color:#000000;
+    background:#FFFFFF;
+    padding:2px 6px;
+    border-radius:0;
+    flex:none;
+    white-space:nowrap;
+  }
+  .case-desc{
+    font-size:13px;
+    color:#B8B8B8;
+    line-height:1.45;
+  }
+  .cases-empty{
+    font-size:13px;
+    color:#9A9A9A;
+    font-style:italic;
+  }
+  @media (max-width:680px){
+    .cases-grid{grid-template-columns:1fr;}
+  }
+
+  footer.foot{
+    margin-top:50px;
+    padding-top:24px;
+    border-top:1px solid var(--tint);
+    font-size:11px;
+    letter-spacing:.06em;
+    text-transform:uppercase;
+    color:var(--ink-soft);
+    text-align:center;
+  }
+
+  @media (max-width:680px){
+    .panel-cols{grid-template-columns:1fr;}
+    .corner{width:170px;min-width:170px;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <p class="eyebrow">AART — Faglig organisation 2026</p>
+    <h1>Alle arbejder<br><em>tværfagligt</em></h1>
+    <p class="lede">Matrixen viser hvordan hvert kundesegment krydser hvert forretningsområde. Klik på et felt for at se hvem der mødes i overlappet.</p>
+    <div class="legend">
+      <span><span class="dot off"></span>Offentlig</span>
+      <span><span class="dot priv"></span>Privat</span>
+      <span>Klik på et felt for detaljer</span>
+    </div>
+  </header>
+
+  <div class="matrix-scroll">
+    <table class="matrix" id="matrix"></table>
+  </div>
+
+  <div class="panel-holder">
+    <div class="panel" id="panel">
+      <div class="panel-top">
+        <div>
+          <p class="panel-title">Overlap</p>
+          <h3 class="panel-heading" id="panel-heading"></h3>
+        </div>
+        <button class="panel-close" id="panel-close" aria-label="Luk">✕</button>
+      </div>
+      <div class="panel-cols">
+        <div class="panel-block">
+          <h4 id="col-block-title">Forretningsområde</h4>
+          <ul id="col-people"></ul>
+        </div>
+        <div class="panel-block">
+          <h4 id="row-block-title">Kundesegment</h4>
+          <ul id="row-people"></ul>
+        </div>
+      </div>
+      <div class="panel-note" id="panel-note"></div>
+      <div class="cases-section">
+        <h4>Relevante cases <span class="case-example-tag">Eksempler</span></h4>
+        <div class="cases-grid" id="cases-grid"></div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="foot">Baseret på diagrammet "Faglig organisation 2026" · forenklet og interaktiv version</footer>
+</div>
+
+<script>
+// ---------- DATA ----------
+const columns = [
+  { id:"baer", name:"Bæredygtighed", people:[{office:"DK", names:["Signe Bang Korsnes"]}] },
+  { id:"miljo", name:"Miljø", people:[{office:"DK", names:["Thomas Hougaard"]}] },
+  { id:"space", name:"Space planning", people:[
+      {office:"DK EAST", names:["Christian Holtegård Christensen"]},
+      {office:"DK WEST", names:["?"]}
+  ]},
+  { id:"visuel", name:"Visuel kommunikation", people:[{office:"DK", names:["Konrad Wojcik"]}] },
+  { id:"komm", name:"Kommunikation", people:[{office:"DK", names:["Laura Sofie Toftdahl"]}] },
+  { id:"tilbud", name:"Tilbud", people:[
+      {office:"DK EAST", names:["Katrine Hegner Stærmose"]},
+      {office:"DK WEST", names:["Sidsel Vogdrup-Schmidt"]}
+  ]},
+  { id:"effekt", name:"Effekt", people:[{office:"DK", names:["Dorte Alber"]}] },
+];
+
+const rows = [
+  { id:"alment", group:"off", name:"Alment (nybyg og renovering)", people:[
+      {office:"DK EAST", names:["Maria Jensen"]},
+      {office:"DK WEST", names:["Kigger efter profil"]}
+  ]},
+  { id:"undervis", group:"off", name:"Undervisning, kultur og idræt", people:[
+      {office:"DK EAST", names:["Susanne Hansen"]},
+      {office:"DK WEST", names:["Anne Sofie Buur Okkels"]}
+  ]},
+  { id:"sundhed", group:"off", name:"Sundhed", people:[
+      {office:"DK EAST", names:["Susanne Hansen"]},
+      {office:"DK WEST", names:["Nanna Flintholm"]}
+  ]},
+  { id:"senior", group:"off", name:"Senior / botilbud / plejehjem", people:[
+      {office:"DK EAST", names:["Inês Tavares Correia"]},
+      {office:"DK WEST", names:["Kigger efter profil"]}
+  ]},
+  { id:"boliger", group:"priv", name:"Boliger / nyt og transformation", people:[
+      {office:"DK EAST", names:["Ida Richter","Claus Smed Søndergård"]},
+      {office:"DK WEST", names:["Karsten Sinning"]}
+  ]},
+  { id:"erhverv", group:"priv", name:"Erhverv", people:[
+      {office:"DK EAST", names:["Signe Bang Korsnes"]},
+      {office:"DK WEST", names:["?"]}
+  ]},
+];
+
+const groupLabels = { off:"Offentlig", priv:"Privat" };
+
+// ---------- EKSEMPEL-CASES ----------
+// Disse er PLACEHOLDERS – I har endnu ikke rigtige cases i systemet.
+// Byt navn/beskrivelse ud, og juster "tags" til de forretningsområder
+// (columns id'er, se ovenfor) som casen reelt demonstrerer.
+// Et kundesegment kan sagtens have flere cases.
+const exampleCases = {
+  alment: [
+    { name:"Eksempel: Alment boligbyggeri, Aarhus Ø", desc:"Nybyggeri med fokus på lavt CO2-aftryk og fleksibel planløsning til fremtidig ombygning.", tags:["baer","miljo","space","tilbud"] },
+    { name:"Eksempel: Renovering af almen bebyggelse, 1970'erne", desc:"Facaderenovering og klimaskærm kombineret med ny udearealer og fælleshus.", tags:["miljo","space","effekt"] }
+  ],
+  undervis: [
+    { name:"Eksempel: Ny folkeskole og idrætshal", desc:"Skole tænkt sammen med lokal idrætsforening; fælles indgang og delt udeareal.", tags:["space","visuel","komm"] },
+    { name:"Eksempel: Kulturhus og bibliotek", desc:"Ombygning af eksisterende ramme til nyt kulturelt samlingspunkt.", tags:["visuel","effekt"] }
+  ],
+  sundhed: [
+    { name:"Eksempel: Sundhedshus, renovering", desc:"Eksisterende bygningsmasse omdannet til moderne lægehus og terapiklinikker.", tags:["baer","miljo","effekt"] }
+  ],
+  senior: [
+    { name:"Eksempel: Nyt plejecenter med botilbud", desc:"Boformer for ældre med fokus på hjemlighed, dagslys og små bofællesskaber.", tags:["baer","space","tilbud"] }
+  ],
+  boliger: [
+    { name:"Eksempel: Transformation af erhvervsejendom til boliger", desc:"Omdannelse af tidligere kontorejendom til 40 nye boliger.", tags:["miljo","space","komm"] },
+    { name:"Eksempel: Nybyggeri, privat boligforening", desc:"Nyt boligbyggeri med fælles gårdrum og bæredygtige materialevalg.", tags:["baer","tilbud","effekt"] }
+  ],
+  erhverv: [
+    { name:"Eksempel: Nyt hovedkvarter til privat virksomhed", desc:"Domicilbyggeri med stærk visuel identitet og fokus på brugeroplevelse.", tags:["visuel","komm","tilbud","effekt"] }
+  ],
+};
+
+// ---------- HELPERS ----------
+function initialsOf(name){
+  const clean = name.replace("?","· ").trim();
+  if(clean === "·" || name === "?") return "?";
+  if(name.toLowerCase().includes("kigger")) return "…";
+  const parts = name.split(" ").filter(Boolean);
+  if(parts.length === 1) return parts[0].slice(0,2).toUpperCase();
+  return (parts[0][0] + parts[parts.length-1][0]).toUpperCase();
+}
+
+function peoplePreview(peopleArr, max){
+  const flat = [];
+  peopleArr.forEach(group => group.names.forEach(n => flat.push(n)));
+  return flat.slice(0, max);
+}
+
+function renderPeopleList(ul, peopleArr){
+  ul.innerHTML = "";
+  peopleArr.forEach(group => {
+    group.names.forEach(name => {
+      const li = document.createElement("li");
+      const badge = document.createElement("span");
+      badge.className = "badge";
+      badge.textContent = group.office;
+      const span = document.createElement("span");
+      span.textContent = name;
+      li.appendChild(badge);
+      li.appendChild(span);
+      ul.appendChild(li);
+    });
+  });
+}
+
+function renderCases(container, rowId, colId){
+  container.innerHTML = "";
+  const all = exampleCases[rowId] || [];
+  const matching = all.filter(c => c.tags.includes(colId));
+  const list = matching.length ? matching : all;
+
+  if(!list.length){
+    const p = document.createElement("p");
+    p.className = "cases-empty";
+    p.textContent = "Ingen eksempelcase endnu — tilføj jeres egen her.";
+    container.appendChild(p);
+    return;
+  }
+
+  list.forEach(c => {
+    const card = document.createElement("div");
+    card.className = "case-card";
+    const top = document.createElement("div");
+    top.className = "case-card-top";
+    const name = document.createElement("div");
+    name.className = "case-name";
+    name.textContent = c.name;
+    top.appendChild(name);
+    card.appendChild(top);
+    const desc = document.createElement("div");
+    desc.className = "case-desc";
+    desc.textContent = c.desc;
+    card.appendChild(desc);
+    container.appendChild(card);
+  });
+}
+
+// ---------- BUILD TABLE ----------
+const table = document.getElementById("matrix");
+
+// header row
+const thead = document.createElement("tr");
+const cornerTh = document.createElement("th");
+cornerTh.className = "corner";
+thead.appendChild(cornerTh);
+columns.forEach((col, i) => {
+  const th = document.createElement("th");
+  th.className = "col-head";
+  const inner = document.createElement("div");
+  inner.className = "col-head-inner";
+  const num = document.createElement("span");
+  num.className = "col-num";
+  num.textContent = String(i + 1).padStart(2, "0");
+  const label = document.createElement("span");
+  label.textContent = col.name;
+  inner.appendChild(num);
+  inner.appendChild(label);
+  th.appendChild(inner);
+  thead.appendChild(th);
+});
+table.appendChild(thead);
+
+let currentGroup = null;
+let openCell = null;
+
+rows.forEach(row => {
+  if(row.group !== currentGroup){
+    currentGroup = row.group;
+    const groupTr = document.createElement("tr");
+    groupTr.className = "group-row";
+    const groupTd = document.createElement("td");
+    groupTd.colSpan = columns.length + 1;
+    const labelSpan = document.createElement("span");
+    labelSpan.className = "group-label";
+    groupTd.className = "group-" + currentGroup;
+    labelSpan.textContent = groupLabels[currentGroup];
+    groupTd.appendChild(labelSpan);
+    groupTr.appendChild(groupTd);
+    table.appendChild(groupTr);
+  }
+
+  const tr = document.createElement("tr");
+  tr.className = "row-" + row.group;
+  const rowTh = document.createElement("td");
+  rowTh.className = "row-head";
+  const rowName = document.createElement("div");
+  rowName.className = "row-name";
+  rowName.textContent = row.name;
+  const rowPeople = document.createElement("div");
+  rowPeople.className = "row-people";
+  rowPeople.textContent = peoplePreview(row.people, 3).join(" · ");
+  rowTh.appendChild(rowName);
+  rowTh.appendChild(rowPeople);
+  tr.appendChild(rowTh);
+
+  columns.forEach(col => {
+    const td = document.createElement("td");
+    td.className = "cell";
+    const btn = document.createElement("button");
+    btn.className = "cell-btn";
+    btn.setAttribute("data-row", row.id);
+    btn.setAttribute("data-col", col.id);
+
+    const rowPreview = peoplePreview(row.people, 1)[0] || "?";
+    const colPreview = peoplePreview(col.people, 1)[0] || "?";
+    [colPreview, rowPreview].forEach(name => {
+      const circle = document.createElement("span");
+      circle.className = "initials";
+      circle.textContent = initialsOf(name);
+      btn.appendChild(circle);
+    });
+
+    btn.addEventListener("click", () => openPanel(row, col, btn));
+    td.appendChild(btn);
+    tr.appendChild(td);
+  });
+
+  table.appendChild(tr);
+});
+
+// ---------- PANEL ----------
+const panel = document.getElementById("panel");
+const panelHeading = document.getElementById("panel-heading");
+const colBlockTitle = document.getElementById("col-block-title");
+const rowBlockTitle = document.getElementById("row-block-title");
+const colPeopleUl = document.getElementById("col-people");
+const rowPeopleUl = document.getElementById("row-people");
+const panelNote = document.getElementById("panel-note");
+const panelClose = document.getElementById("panel-close");
+const casesGrid = document.getElementById("cases-grid");
+
+function openPanel(row, col, btn){
+  if(openCell) openCell.classList.remove("is-open");
+  if(openCell === btn){
+    openCell = null;
+    panel.classList.remove("show");
+    return;
+  }
+  btn.classList.add("is-open");
+  openCell = btn;
+
+  panel.classList.remove("group-off", "group-priv");
+  panel.classList.add("group-" + row.group);
+
+  panelHeading.innerHTML = col.name + '<span class="x">×</span>' + row.name;
+  colBlockTitle.textContent = "Forretningsområde: " + col.name;
+  rowBlockTitle.textContent = "Kundesegment: " + row.name;
+  renderPeopleList(colPeopleUl, col.people);
+  renderPeopleList(rowPeopleUl, row.people);
+  panelNote.textContent = "Disse personer krydser hinanden i dette felt af matrixen og bør tænkes sammen på tværs af projekter inden for " + row.name.toLowerCase() + ".";
+  renderCases(casesGrid, row.id, col.id);
+
+  panel.classList.add("show");
+  panel.scrollIntoView({behavior:"smooth", block:"nearest"});
+}
+
+panelClose.addEventListener("click", () => {
+  if(openCell) openCell.classList.remove("is-open");
+  openCell = null;
+  panel.classList.remove("show");
+});
+</script>
+</body>
+</html>
