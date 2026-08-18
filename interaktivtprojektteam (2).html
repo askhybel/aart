@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+<meta charset="UTF-8">
+<title>Projektteam — interaktivt organisationsdiagram</title>
+<style>
+  :root{
+    --page:#f9f9f7;
+    --surface-1:#fcfcfb;
+    --ink-1:#0b0b0b;
+    --ink-2:#52514e;
+    --ink-muted:#898781;
+    --hairline:#e1e0d9;
+    --border:rgba(11,11,11,0.10);
+    --projekt:#eb6834;
+    --forretning:#2a78d6;
+    --offentlig:#1baf7a;
+    --privat:#eda100;
+    --videns:#4a3aa7;
+    --taskforce:#e87ba4;
+  }
+  *{ box-sizing:border-box; }
+  body{
+    margin:0;
+    font-family:system-ui,-apple-system,"Segoe UI",sans-serif;
+    background:var(--page);
+    color:var(--ink-1);
+  }
+  .wrap{ max-width:1440px; margin:0 auto; padding:36px 24px 56px; }
+  h1{ font-size:26px; font-weight:700; margin:0 0 6px; letter-spacing:-0.01em; }
+  p.lede{ font-size:14.5px; color:var(--ink-2); max-width:900px; margin:0 0 24px; line-height:1.55; }
+  .layout{
+    position:relative;
+    display:grid;
+    grid-template-columns: 250px 1fr 270px;
+    gap:20px;
+    align-items:start;
+  }
+  #lines{ position:absolute; inset:0; width:100%; height:100%; pointer-events:none; z-index:5; overflow:visible; }
+
+  /* side panels */
+  .panel{
+    position:relative;
+    z-index:10;
+    background:var(--surface-1);
+    border:1px solid var(--border);
+    border-radius:14px;
+    padding:16px;
+    margin-bottom:16px;
+  }
+  .panel h3{ margin:0 0 4px; font-size:14px; font-weight:700; }
+  .panel .dot{ display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:6px; }
+  .panel-desc{ font-size:12px; color:var(--ink-muted); margin:0 0 12px; line-height:1.45; }
+  .chips{ display:flex; flex-direction:column; gap:6px; }
+  .chip{
+    text-align:left;
+    font-size:12.5px;
+    font-weight:600;
+    color:var(--ink-1);
+    background:#f1f0ec;
+    border:1.5px solid transparent;
+    border-radius:8px;
+    padding:7px 10px;
+    cursor:pointer;
+    transition:all .12s ease;
+  }
+  .chip .focus{ display:block; font-weight:500; color:var(--ink-muted); font-size:11px; margin-top:1px; }
+  .chip:hover{ background:#e9e8e2; }
+  .chip.selected{ color:#fff; }
+  .chip.selected .focus{ color:rgba(255,255,255,0.85); }
+  .chip.videns.selected{ background:var(--videns); border-color:var(--videns); }
+  .chip.taskforce.selected{ background:var(--taskforce); border-color:var(--taskforce); }
+  .example-tag{ font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--ink-muted); background:#eeede7; border-radius:5px; padding:1px 5px; margin-left:6px; }
+  .chip.selected .example-tag{ background:rgba(255,255,255,0.25); color:#fff; }
+
+  /* diagram */
+  .diagram{ position:relative; z-index:10; }
+  .bar{
+    background:#eeede8;
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:12px 18px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:10px;
+    font-size:18px;
+    font-weight:700;
+    color:var(--ink-1);
+  }
+  .bar .arr{ color:var(--ink-muted); font-weight:400; }
+  .row{ display:grid; gap:10px; margin:12px 0; }
+  #row-forretning{ grid-template-columns: repeat(5, 1fr); }
+  #row-kunde{ grid-template-columns: repeat(6, 1fr); }
+  .box{
+    position:relative;
+    flex:1 1 0;
+    min-width:0;
+    background:var(--surface-1);
+    border:2px solid var(--hairline);
+    border-radius:10px;
+    padding:10px 10px;
+    cursor:pointer;
+    transition:all .12s ease;
+    text-align:center;
+  }
+  .box:hover{ border-color:#c3c2b7; }
+  .box .name{ font-size:12px; font-weight:700; line-height:1.3; overflow-wrap:break-word; word-break:break-word; }
+  .box .lead{ font-size:10.5px; color:var(--ink-muted); margin-top:4px; line-height:1.3; overflow-wrap:break-word; word-break:break-word; }
+  .box.selected{ color:#fff; }
+  .box.selected .lead{ color:rgba(255,255,255,0.85); }
+  .box.f.selected{ background:var(--forretning); border-color:var(--forretning); }
+  .box.off.selected{ background:var(--offentlig); border-color:var(--offentlig); }
+  .box.priv.selected{ background:var(--privat); border-color:var(--privat); }
+  .badge{
+    position:absolute; top:-8px; right:-8px;
+    background:var(--projekt); color:#fff; font-size:10px; font-weight:700;
+    border-radius:50%; width:18px; height:18px; display:flex; align-items:center; justify-content:center;
+    border:2px solid var(--page);
+  }
+  .subbars{ display:flex; gap:10px; margin:0 0 8px; }
+  .subbar{
+    flex:1 1 0; text-align:center; font-size:12px; font-weight:700; letter-spacing:.04em;
+    color:var(--ink-2); background:#f1f0ec; border-radius:8px; padding:5px 0;
+  }
+  .circle-row{ position:relative; height:170px; margin:8px 0; }
+  .projekt-circle{
+    position:absolute; left:26%; top:50%; transform:translate(-50%,-50%);
+    width:150px; height:150px; border-radius:50%;
+    background:var(--projekt); color:#fff;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    box-shadow:0 0 0 6px var(--surface-1), 0 0 0 7px var(--border);
+  }
+  .projekt-circle .t1{ font-size:19px; font-weight:800; letter-spacing:.02em; }
+  .projekt-circle .t2{ font-size:10.5px; font-weight:600; opacity:.85; margin-top:2px; }
+  .hint{ position:absolute; left:calc(26% + 100px); top:50%; transform:translateY(-50%); max-width:230px; font-size:12px; color:var(--ink-muted); line-height:1.5; }
+
+  /* team panel */
+  .team-panel{
+    position:sticky; top:20px;
+    z-index:10;
+    background:var(--surface-1);
+    border:1px solid var(--border);
+    border-radius:14px;
+    padding:16px;
+    max-height:calc(100vh - 40px);
+    overflow-y:auto;
+  }
+  .team-panel h3{ margin:0 0 2px; font-size:15px; font-weight:800; display:flex; align-items:center; justify-content:space-between; }
+  .team-count{ background:var(--projekt); color:#fff; font-size:12px; font-weight:800; border-radius:999px; padding:2px 10px; }
+  .team-empty{ font-size:12.5px; color:var(--ink-muted); margin-top:10px; line-height:1.5; }
+  .team-group{ margin-top:14px; }
+  .team-group .g-title{ font-size:11.5px; font-weight:800; text-transform:uppercase; letter-spacing:.04em; color:var(--ink-muted); margin-bottom:6px; display:flex; align-items:center; gap:6px; }
+  .team-group .g-title .dot{ width:8px; height:8px; border-radius:50%; }
+  .person{ font-size:12.5px; padding:6px 0; border-top:1px solid var(--hairline); display:flex; flex-direction:column; gap:1px; }
+  .person:first-child{ border-top:none; }
+  .person .name-text{ font-weight:600; overflow-wrap:break-word; word-break:break-word; }
+  .person .role{ color:var(--ink-muted); font-size:11px; overflow-wrap:break-word; word-break:break-word; }
+  .actions{ margin-top:18px; display:flex; flex-direction:column; gap:8px; }
+  button.btn{
+    font:inherit; font-size:12.5px; font-weight:700; cursor:pointer;
+    border-radius:8px; padding:9px 10px; border:1.5px solid var(--border); background:#fff; color:var(--ink-1);
+  }
+  button.btn:hover{ background:#f1f0ec; }
+  button.btn.primary{ background:var(--ink-1); color:#fff; border-color:var(--ink-1); }
+  button.btn.primary:hover{ opacity:.88; }
+  .copy-msg{ font-size:11.5px; color:var(--offentlig); font-weight:700; margin-top:4px; min-height:14px; }
+
+  /* overview eyebrows — help the three columns read as one flow */
+  .col-eyebrow{
+    font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.06em;
+    color:var(--ink-muted); margin:0 0 8px; display:flex; align-items:center; gap:6px;
+  }
+  .col-eyebrow .num{
+    display:inline-flex; align-items:center; justify-content:center;
+    width:16px; height:16px; border-radius:50%; background:var(--ink-1); color:#fff;
+    font-size:10px; font-weight:800; flex:none;
+  }
+
+  /* relevante cases — compact, lives inside the team/result panel */
+  .team-cases{ margin-top:16px; padding-top:14px; border-top:1px dashed var(--hairline); }
+  .team-cases h4{ font-size:11.5px; font-weight:800; text-transform:uppercase; letter-spacing:.04em; color:var(--ink-muted); margin:0; }
+  .cases-sub{ font-size:11.5px; color:var(--ink-muted); margin:3px 0 10px; line-height:1.45; }
+  .mini-case{ background:#f5f4ef; border-radius:10px; padding:10px 11px; margin-top:8px; }
+  .mini-case:first-of-type{ margin-top:0; }
+  .mini-case .mc-title{ font-size:12px; font-weight:800; line-height:1.3; display:flex; justify-content:space-between; align-items:start; gap:6px; }
+  .mini-case .mc-desc{ font-size:11px; color:var(--ink-2); margin-top:3px; line-height:1.42; }
+  .mini-case .case-tags{ display:flex; flex-wrap:wrap; gap:4px; margin-top:7px; }
+  .case-tag{
+    font-size:9.5px; font-weight:700; padding:2px 7px; border-radius:999px;
+    background:#e9e8e2; color:var(--ink-muted);
+  }
+  .case-tag.match{ color:#fff; }
+  .case-tag.match.f{ background:var(--forretning); }
+  .case-tag.match.off{ background:var(--offentlig); }
+  .case-tag.match.priv{ background:var(--privat); }
+  .cases-empty{ font-size:12px; color:var(--ink-muted); }
+  .note{ max-width:900px; margin:24px 0 0; font-size:12.5px; color:var(--ink-muted); line-height:1.5; }
+  @media (max-width: 1080px){
+    .layout{ grid-template-columns: 1fr; }
+    #row-forretning{ grid-template-columns: repeat(3, 1fr); }
+    #row-kunde{ grid-template-columns: repeat(3, 1fr); }
+    .hint{ display:none; }
+    .team-panel{ position:relative; top:0; max-height:none; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Projektteam — klik jer frem</h1>
+  <p class="lede">Direkte version af jeres organisationsdiagram: klik på et forretningsområde eller kundesegment, og der trækkes en streg ind til projektet — samtidig samles den/de faglige ledere op i projektteamet til højre. Under Vidensnetværk og Taskforce kan I vælge konkrete personer (navnene her er eksempler, indtil de rigtige er på plads).</p>
+
+  <div class="layout" id="layout">
+    <svg id="lines" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <marker id="arrow-f" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#2a78d6"/></marker>
+        <marker id="arrow-off" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#1baf7a"/></marker>
+        <marker id="arrow-priv" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#eda100"/></marker>
+        <marker id="arrow-videns" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#4a3aa7"/></marker>
+        <marker id="arrow-taskforce" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#e87ba4"/></marker>
+      </defs>
+    </svg>
+
+    <!-- LEFT PANELS -->
+    <div>
+      <div class="col-eyebrow"><span class="num">1</span>Vælg netværk (valgfrit)</div>
+      <div class="panel" id="panel-videns">
+        <h3><span class="dot" style="background:var(--videns)"></span>Vidensnetværk</h3>
+        <p class="panel-desc">Faste netværk og navngivne specialister, der kan trækkes ind uanset forretningsområde eller kundesegment.</p>
+        <div class="chips" id="chips-videns"></div>
+      </div>
+      <div class="panel" id="panel-taskforce">
+        <h3><span class="dot" style="background:var(--taskforce)"></span>Taskforce</h3>
+        <p class="panel-desc">Ad hoc-team der samles på tværs af forretningsområder og kundesegmenter, når et projekt kræver det.</p>
+        <div class="chips" id="chips-taskforce"></div>
+      </div>
+    </div>
+
+    <!-- DIAGRAM -->
+    <div class="diagram">
+      <div class="col-eyebrow"><span class="num">2</span>Vælg forretningsområder og kundesegmenter</div>
+      <div class="bar"><span>Forretningsområder</span><span class="arr">→</span></div>
+      <div class="row" id="row-forretning"></div>
+
+      <div class="circle-row" id="circle-row">
+        <div class="projekt-circle" id="projekt">
+          <div class="t1">PROJEKT</div>
+          <div class="t2">i centrum</div>
+        </div>
+        <div class="hint">Klik felterne for at bygge projektteamet — klik igen for at fjerne.</div>
+      </div>
+
+      <div class="row" id="row-kunde"></div>
+      <div class="subbars" id="subbars"></div>
+      <div class="bar"><span>Kundesegmenter</span><span class="arr">→</span></div>
+    </div>
+
+    <!-- TEAM PANEL -->
+    <div class="team-panel">
+      <div class="col-eyebrow"><span class="num">3</span>Resultat</div>
+      <h3>Projektteam <span class="team-count" id="team-count">0</span></h3>
+      <div id="team-body"><div class="team-empty">Ingen valgt endnu. Klik på felter eller navne for at samle projektteamet.</div></div>
+
+      <div class="team-cases" id="team-cases">
+        <h4 id="cases-title">Eksempler på cases</h4>
+        <p class="cases-sub" id="cases-sub"></p>
+        <div id="cases-grid"></div>
+      </div>
+
+      <div class="actions">
+        <button class="btn primary" id="copy-btn">Kopiér liste</button>
+        <button class="btn" id="reset-btn">Nulstil alle valg</button>
+        <div class="copy-msg" id="copy-msg"></div>
+      </div>
+    </div>
+  </div>
+
+  <p class="note">Data om forretningsområder og kundesegmenter er hentet fra jeres organisationsark (faglig organisation AART). Navnene under Vidensnetværk og Taskforce, samt alle cases, er eksempler og bør erstattes med jeres egne, når de er på plads.</p>
+</div>
+
+<script>
+const forretning = [
+  {id:"byrum", name:"Byrum og landskab", people:[{name:"Jens Kinch", role:"Vest"},{name:"Thomas Larsen / Jaques DM", role:"Øst"}]},
+  {id:"planby", name:"Plan- og byudvikling", people:[{name:"Rasmus Højkær Larsen", role:"Vest"},{name:"Maja Matzen", role:"Øst"}]},
+  {id:"transform", name:"Transformation og bevaring", people:[{name:"Sara Emilie Nilsson", role:"Vest"},{name:"Helene Anker Kure", role:"Øst"}]},
+  {id:"baer", name:"Bæredygtighed / EFFEKT", people:[{name:"Signe Bang Korsnes", role:"Vest"}]},
+  {id:"miljo", name:"Miljø", people:[{name:"Thomas Hougaard", role:"Vest"}]},
+  {id:"space", name:"Space planning", people:[{name:"Christian Holtegård Christensen", role:"Vest"}]},
+  {id:"visuel", name:"Visuel kommunikation", people:[{name:"Konrad Wojcik", role:"Vest"}]},
+  {id:"komm", name:"Kommunikation", people:[{name:"Laura Sofie Toftdahl", role:"Vest"}]},
+  {id:"tilbud", name:"Tilbud", people:[{name:"Katrine Hegner Stærmose", role:"Vest"},{name:"Sidsel Vogdrup-Schmidt", role:"Øst"}]},
+  {id:"effekt", name:"EFFEKT", people:[{name:"Dorte Alber", role:"Vest"}]}
+];
+
+const kunde = [
+  {id:"alment", name:"Alment — nybyg og renovering", group:"Offentlig", people:[{name:"Maria Jensen", role:"Øst"}]},
+  {id:"undervisning", name:"Undervisning, kultur og idræt", group:"Offentlig", people:[{name:"Anne Sofie Buur Okkels", role:"Vest"},{name:"Susanne Hansen", role:"Øst"}]},
+  {id:"sundhed", name:"Sundhed", group:"Offentlig", people:[{name:"Nanna Flintholm", role:"Vest"},{name:"Susanne Hansen", role:"Øst"}]},
+  {id:"senior", name:"Senior / botilbud / plejehjem", group:"Offentlig", people:[{name:"Inês Tavares Correia", role:"Øst"}]},
+  {id:"boliger", name:"Boliger — nyt og transformation", group:"Privat", people:[{name:"Karsten Sinning", role:"Vest"},{name:"Claus Smed Søndergård / Ida Richter", role:"Øst"}]},
+  {id:"erhverv", name:"Erhverv", group:"Privat", people:[{name:"Faglig leder udpeges", role:""}]}
+];
+
+const videns = [
+  {name:"Anna Nielsen", focus:"Bæredygtighed & LCA"},
+  {name:"Peter Holm", focus:"Digital & BIM"},
+  {name:"Mette Krogh", focus:"Brugerinddragelse"},
+  {name:"Lars Vium", focus:"Kvalitetssikring"},
+  {name:"Sofie Aagaard", focus:"Dagslys & bioscore"},
+  {name:"Jonas Falk", focus:"Kontrakt & jura"}
+];
+
+const taskforce = [
+  {name:"Camilla Beck", focus:"Landskab"},
+  {name:"Rasmus Toft", focus:"Konstruktion"},
+  {name:"Ida Werner", focus:"Byggeledelse"},
+  {name:"Thomas Vang", focus:"Anlægsøkonomi"},
+  {name:"Nina Sørensen", focus:"Kommunikation"},
+  {name:"Mikkel Roed", focus:"Projektering"}
+];
+
+// Eksempel-cases der viser konceptet: hver case er tagget med de forretningsområder/
+// kundesegmenter den er relevant for. Erstat med jeres egne referenceprojekter.
+const cases = [
+  { name:"Fjordbakken Boligkvarter", desc:"Nyt boligkvarter med bæredygtige materialer og sammenhængende byrum.", tags:["boliger","byrum","baer"] },
+  { name:"Skovly Skole", desc:"Ny folkeskole med fokus på dagslys, indeklima og visuel identitet.", tags:["undervisning","miljo","visuel"] },
+  { name:"Havnetorvet Erhvervspark", desc:"Transformation af havneareal til blandet erhverv og byliv.", tags:["erhverv","planby","tilbud"] },
+  { name:"Solbjerg Plejecenter", desc:"Plejecenter med lavt energiforbrug og fokus på hjemlighed.", tags:["senior","baer","effekt"] },
+  { name:"Nordkaj Sundhedshus", desc:"Sundhedshus med fleksibel space planning til fremtidige behov.", tags:["sundhed","space","komm"] },
+  { name:"Kildevæld Almene Boliger", desc:"Renovering og nybyggeri af almene boliger i eksisterende kvarter.", tags:["alment","boliger","transform"] },
+  { name:"Østerport Transformation", desc:"Omdannelse af ældre erhvervsbygning til blandet by-funktion.", tags:["transform","byrum","visuel"] },
+  { name:"Grøn Idrætspark", desc:"Idræts- og kulturfaciliteter integreret i grønt byrum.", tags:["undervisning","miljo","byrum"] },
+  { name:"Vandkunsten Erhvervsdomicil", desc:"Kontordomicil med fokus på EFFEKT-beregninger og energioptimering.", tags:["erhverv","effekt","tilbud"] },
+  { name:"Ådalens Botilbud", desc:"Botilbud med universel tilgængelighed og bæredygtige løsninger.", tags:["senior","space","baer"] },
+  { name:"Multihus Nørrevang", desc:"Kombineret bibliotek, skole og idrætshal med delte faciliteter.", tags:["undervisning","planby","komm"] },
+  { name:"Strandengen Sundhedscenter", desc:"Nybygget sundhedscenter med fokus på brugerinddragelse.", tags:["sundhed","alment","visuel"] }
+];
+
+// Slå op fra id til navn/type, så case-tags kan vises med rigtige labels og farver
+const idLookup = {};
+forretning.forEach(f => idLookup[f.id] = { label:f.name, cls:"f" });
+kunde.forEach(k => idLookup[k.id] = { label:k.name, cls: k.group === "Offentlig" ? "off" : "priv" });
+
+const state = {
+  forretning: new Set(),
+  kunde: new Set(),
+  videns: new Set(),
+  taskforce: new Set()
+};
+
+const rowF = document.getElementById("row-forretning");
+const rowK = document.getElementById("row-kunde");
+const subbars = document.getElementById("subbars");
+const chipsVidens = document.getElementById("chips-videns");
+const chipsTaskforce = document.getElementById("chips-taskforce");
+
+function makeBox(item, cls, container){
+  const box = document.createElement("div");
+  box.className = "box " + cls;
+  box.dataset.id = item.id;
+  const leadNames = item.people.map(p=>p.name).join(", ");
+  box.innerHTML = `<div class="name">${item.name}</div><div class="lead">${leadNames || "&nbsp;"}</div>`;
+  box.addEventListener("click", () => toggle(cls === "f" ? "forretning" : "kunde", item.id, box));
+  container.appendChild(box);
+  return box;
+}
+
+forretning.forEach(item => makeBox(item, "f", rowF));
+kunde.forEach(item => makeBox(item, item.group === "Offentlig" ? "off" : "priv", rowK));
+
+// sub bars matching Private / Offentlige grouping, sized to match box widths
+const privCount = kunde.filter(k=>k.group==="Privat").length;
+const offCount = kunde.filter(k=>k.group==="Offentlig").length;
+const sbPriv = document.createElement("div");
+sbPriv.className = "subbar"; sbPriv.style.flex = privCount; sbPriv.textContent = "PRIVATE";
+const sbOff = document.createElement("div");
+sbOff.className = "subbar"; sbOff.style.flex = offCount; sbOff.textContent = "OFFENTLIGE";
+subbars.appendChild(sbPriv); subbars.appendChild(sbOff);
+
+function makeChip(item, cls, container, groupSet){
+  const chip = document.createElement("button");
+  chip.className = "chip " + cls;
+  chip.innerHTML = `${item.name} <span class="example-tag">eksempel</span><span class="focus">${item.focus}</span>`;
+  chip.addEventListener("click", () => toggle(cls, item.name, chip));
+  container.appendChild(chip);
+  return chip;
+}
+videns.forEach(item => makeChip(item, "videns", chipsVidens));
+taskforce.forEach(item => makeChip(item, "taskforce", chipsTaskforce));
+
+function toggle(category, id, el){
+  const set = state[category];
+  if(set.has(id)){ set.delete(id); el.classList.remove("selected"); }
+  else { set.add(id); el.classList.add("selected"); }
+  updateBadges();
+  drawLines();
+  renderTeam();
+  renderCases();
+}
+
+function updateBadges(){
+  document.querySelectorAll(".badge").forEach(b=>b.remove());
+  [...rowF.children].forEach(box=>{
+    const item = forretning.find(f=>f.id===box.dataset.id);
+    if(state.forretning.has(item.id) && item.people.length>1){
+      const b = document.createElement("div"); b.className="badge"; b.textContent = item.people.length; box.appendChild(b);
+    }
+  });
+  [...rowK.children].forEach(box=>{
+    const item = kunde.find(f=>f.id===box.dataset.id);
+    if(state.kunde.has(item.id) && item.people.length>1){
+      const b = document.createElement("div"); b.className="badge"; b.textContent = item.people.length; box.appendChild(b);
+    }
+  });
+}
+
+// ---- line drawing ----
+const svg = document.getElementById("lines");
+const layout = document.getElementById("layout");
+const projekt = document.getElementById("projekt");
+
+function rectRel(el){
+  const r = el.getBoundingClientRect();
+  const l = layout.getBoundingClientRect();
+  return { left:r.left-l.left, top:r.top-l.top, right:r.right-l.left, bottom:r.bottom-l.top, width:r.width, height:r.height,
+           cx:(r.left+r.right)/2-l.left, cy:(r.top+r.bottom)/2-l.top };
+}
+
+function clipToCircle(start, circleCenter, r){
+  const dx = circleCenter.x-start.x, dy = circleCenter.y-start.y;
+  const dist = Math.hypot(dx,dy) || 1;
+  return { x: circleCenter.x - (dx/dist)*r, y: circleCenter.y - (dy/dist)*r };
+}
+
+function addLine(x1,y1,x2,y2,color,marker){
+  const line = document.createElementNS("http://www.w3.org/2000/svg","line");
+  line.setAttribute("x1",x1); line.setAttribute("y1",y1);
+  line.setAttribute("x2",x2); line.setAttribute("y2",y2);
+  line.setAttribute("stroke", color);
+  line.setAttribute("stroke-width", 2.5);
+  line.setAttribute("stroke-linecap","round");
+  if(marker) line.setAttribute("marker-end", `url(#${marker})`);
+  const len = Math.hypot(x2-x1,y2-y1);
+  line.setAttribute("stroke-dasharray", len);
+  line.setAttribute("stroke-dashoffset", len);
+  svg.appendChild(line);
+  requestAnimationFrame(()=>{
+    line.style.transition = "stroke-dashoffset .45s ease";
+    line.style.strokeDashoffset = "0";
+  });
+}
+
+function drawLines(){
+  svg.querySelectorAll("line").forEach(l=>l.remove());
+  const pRect = rectRel(projekt);
+  const circleCenter = { x:pRect.cx, y:pRect.cy };
+  const circleR = pRect.width/2 + 3;
+
+  [...rowF.children].forEach(box=>{
+    const item = forretning.find(f=>f.id===box.dataset.id);
+    if(!state.forretning.has(item.id)) return;
+    const r = rectRel(box);
+    const start = { x:r.cx, y:r.bottom };
+    const end = clipToCircle(start, circleCenter, circleR);
+    addLine(start.x,start.y,end.x,end.y,"#2a78d6","arrow-f");
+  });
+
+  [...rowK.children].forEach(box=>{
+    const item = kunde.find(f=>f.id===box.dataset.id);
+    if(!state.kunde.has(item.id)) return;
+    const r = rectRel(box);
+    const start = { x:r.cx, y:r.top };
+    const end = clipToCircle(start, circleCenter, circleR);
+    const color = item.group==="Offentlig" ? "#1baf7a" : "#eda100";
+    const marker = item.group==="Offentlig" ? "arrow-off" : "arrow-priv";
+    addLine(start.x,start.y,end.x,end.y,color,marker);
+  });
+
+  if(state.videns.size>0){
+    const panel = document.getElementById("panel-videns");
+    const r = rectRel(panel);
+    const start = { x:r.right, y:r.cy };
+    const end = clipToCircle(start, circleCenter, circleR);
+    addLine(start.x,start.y,end.x,end.y,"#4a3aa7","arrow-videns");
+  }
+  if(state.taskforce.size>0){
+    const panel = document.getElementById("panel-taskforce");
+    const r = rectRel(panel);
+    const start = { x:r.right, y:r.cy };
+    const end = clipToCircle(start, circleCenter, circleR);
+    addLine(start.x,start.y,end.x,end.y,"#e87ba4","arrow-taskforce");
+  }
+}
+
+// ---- team panel ----
+const teamBody = document.getElementById("team-body");
+const teamCount = document.getElementById("team-count");
+
+function renderTeam(){
+  const groups = [];
+  const allNames = new Set();
+
+  const fSel = forretning.filter(f=>state.forretning.has(f.id));
+  fSel.forEach(item=>item.people.forEach(p=>allNames.add(p.name)));
+  if(fSel.length){
+    groups.push({ title:"Forretningsområder", color:"#2a78d6", rows: fSel.flatMap(item=>item.people.map(p=>({name:p.name, role:`${item.name}${p.role? " · "+p.role:""}`}))) });
+  }
+
+  const kSel = kunde.filter(k=>state.kunde.has(k.id));
+  kSel.forEach(item=>item.people.forEach(p=>allNames.add(p.name)));
+  if(kSel.length){
+    groups.push({ title:"Kundesegmenter", color:"#1baf7a", rows: kSel.flatMap(item=>item.people.map(p=>({name:p.name, role:`${item.name}${p.role? " · "+p.role:""}`}))) });
+  }
+
+  if(state.videns.size){
+    [...state.videns].forEach(n=>allNames.add(n));
+    groups.push({ title:"Vidensnetværk", color:"#4a3aa7", rows:[...state.videns].map(n=>{
+      const v = videns.find(v=>v.name===n);
+      return { name:n, role:v?v.focus:"" };
+    })});
+  }
+  if(state.taskforce.size){
+    [...state.taskforce].forEach(n=>allNames.add(n));
+    groups.push({ title:"Taskforce", color:"#e87ba4", rows:[...state.taskforce].map(n=>{
+      const v = taskforce.find(v=>v.name===n);
+      return { name:n, role:v?v.focus:"" };
+    })});
+  }
+
+  teamCount.textContent = allNames.size;
+
+  if(!groups.length){
+    teamBody.innerHTML = `<div class="team-empty">Ingen valgt endnu. Klik på felter eller navne for at samle projektteamet.</div>`;
+    return;
+  }
+
+  teamBody.innerHTML = groups.map(g => `
+    <div class="team-group">
+      <div class="g-title"><span class="dot" style="background:${g.color}"></span>${g.title}</div>
+      ${g.rows.map(r=>`<div class="person"><span class="name-text">${r.name}</span><span class="role">${r.role}</span></div>`).join("")}
+    </div>
+  `).join("");
+}
+
+// ---- relevante cases ----
+function renderCases(){
+  const selectedTags = new Set([...state.forretning, ...state.kunde]);
+  const scored = cases.map(c => ({ ...c, score: c.tags.filter(t=>selectedTags.has(t)).length }));
+  let title, sub, list;
+
+  if(selectedTags.size === 0){
+    title = "Eksempler på cases";
+    sub = "Vælg felter til venstre, så vises de mest relevante cases her.";
+    list = cases.slice(0, 2);
+  } else {
+    const withScore = scored.filter(c=>c.score>0).sort((a,b)=>b.score-a.score);
+    if(withScore.length){
+      title = "Relevante cases";
+      sub = "Matcher jeres valg, højest relevans øverst.";
+      list = withScore.slice(0, 2);
+    } else {
+      title = "Ingen match — et par eksempler";
+      sub = "Ingen cases matcher endnu præcis. Her er et par eksempler i mellemtiden.";
+      list = cases.slice(0, 2);
+    }
+  }
+
+  document.getElementById("cases-title").textContent = title;
+  document.getElementById("cases-sub").textContent = sub;
+  document.getElementById("cases-grid").innerHTML = list.map(c => `
+    <div class="mini-case">
+      <div class="mc-title"><span>${c.name}</span><span class="example-tag">eksempel</span></div>
+      <div class="mc-desc">${c.desc}</div>
+      <div class="case-tags">${c.tags.map(t=>{
+        const info = idLookup[t];
+        if(!info) return "";
+        const isMatch = selectedTags.has(t);
+        return `<span class="case-tag ${isMatch ? "match " + info.cls : ""}">${info.label}</span>`;
+      }).join("")}</div>
+    </div>
+  `).join("") || `<div class="cases-empty">Ingen cases at vise.</div>`;
+}
+
+document.getElementById("reset-btn").addEventListener("click", ()=>{
+  state.forretning.clear(); state.kunde.clear(); state.videns.clear(); state.taskforce.clear();
+  document.querySelectorAll(".selected").forEach(el=>el.classList.remove("selected"));
+  updateBadges();
+  drawLines();
+  renderTeam();
+  renderCases();
+});
+
+document.getElementById("copy-btn").addEventListener("click", async ()=>{
+  const lines = [];
+  document.querySelectorAll(".team-group").forEach(g=>{
+    lines.push(g.querySelector(".g-title").textContent.trim());
+    g.querySelectorAll(".person").forEach(p=>{
+      lines.push(" - " + p.textContent.trim());
+    });
+  });
+  const text = lines.length ? lines.join("\n") : "Ingen valgt endnu.";
+  const msg = document.getElementById("copy-msg");
+  try{
+    await navigator.clipboard.writeText(text);
+    msg.textContent = "Kopieret!";
+  }catch(e){
+    msg.textContent = "Kunne ikke kopiere automatisk — markér listen manuelt.";
+  }
+  setTimeout(()=>msg.textContent="", 2500);
+});
+
+window.addEventListener("resize", drawLines);
+drawLines();
+renderTeam();
+renderCases();
+</script>
+</body>
+</html>
